@@ -29,7 +29,7 @@ class LiveTimetableChatbot {
                         <div class="avatar">🏫</div>
                         <div>
                             <h3>ĀKI — Virtual Assistant</h3>
-                            <p><span class="status-indicator"></span>Connected to DeepSeek (local)</p>
+                            <p><span class="status-indicator"></span>Connected to <span id="modelStatus">DeepSeek (local)</span></p>
                             <p style="margin:4px 0 0; font-size:11px; opacity:0.85;">Whitireia & WelTec</p>
                         </div>
                     </div>
@@ -428,6 +428,9 @@ class LiveTimetableChatbot {
 
         // initialize settings by loading from local storage
         this.loadSettings();
+        
+        // update model status display
+        this.updateModelStatus();
 
         // Show notification after delay
         setTimeout(() => {
@@ -462,6 +465,21 @@ class LiveTimetableChatbot {
             if (timetableContext) this.timetableContext = timetableContext;
             if (selectedModel) this.selectedModel = selectedModel;
         } catch (_) { /* ignore */ }
+    }
+
+    updateModelStatus() {
+        const modelStatus = document.getElementById('modelStatus');
+        if (modelStatus) {
+            let displayName = 'DeepSeek (local)';
+            if (this.selectedModel === 'llama3.2:latest') {
+                displayName = 'Illama 3.2 (local)';
+            } else if (this.selectedModel === 'gemma3:4b') {
+                displayName = 'Gemma 3 4B (local)';
+            } else if (this.selectedModel === 'phi3:3.8b') {
+                displayName = 'Phi3 3.8B (local)';
+            }
+            modelStatus.textContent = displayName;
+        }
     }
 
     toggleChatbot() {

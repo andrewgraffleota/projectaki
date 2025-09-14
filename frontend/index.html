@@ -126,7 +126,9 @@
                     <label><input type="checkbox" id="useLLMMain" checked> Enable AI answers (Ollama)</label>
                     <select id="modelMain">
                         <option value="deepseek-r1:8b" selected>DeepSeek R1 8B (local)</option>
-                        <option value="deepseek-coder:6.7b">DeepSeek Coder 6.7B (local)</option>
+                        <option value="llama3.2:latest">Illama 3.2 (local)</option>
+                        <option value="gemma3:4b">Gemma 3 4B (local)</option>
+                        <option value="phi3:3.8b">Phi3 3.8B (local)</option>
                     </select>
                     <label>Theme
                         <select id="themeMode">
@@ -220,7 +222,14 @@
             applyTheme(s.theme);
 
             useLLMMain.addEventListener('change', e => saveSettings({ useLLM: e.target.checked }));
-            modelMain.addEventListener('change', e => saveSettings({ model: e.target.value }));
+            modelMain.addEventListener('change', e => { 
+                saveSettings({ model: e.target.value });
+                // Update chatbot model status if chatbot is available
+                if (window.chatbot) {
+                    window.chatbot.selectedModel = e.target.value;
+                    window.chatbot.updateModelStatus();
+                }
+            });
             systemMain.addEventListener('input', e => saveSettings({ system: e.target.value }));
             knowledgeMain.addEventListener('input', e => saveSettings({ knowledge: e.target.value }));
             themeMode.addEventListener('change', e => { saveSettings({ theme: e.target.value }); applyTheme(e.target.value); });
