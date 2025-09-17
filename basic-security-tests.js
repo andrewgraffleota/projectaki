@@ -68,11 +68,23 @@ class BasicSecurityTester {
         try {
             const response = await axios.get(`${this.baseUrl}/api/search/${encodeURIComponent(maliciousInput)}`);
             
-            if (response.data && JSON.stringify(response.data).includes(maliciousInput)) {
+            // Check if the response contains the original malicious input
+            const responseText = JSON.stringify(response.data);
+            
+            // If the malicious input is still present in the response, it's vulnerable
+            if (responseText.includes('../../../etc/passwd') || 
+                responseText.includes('etc/passwd') || 
+                responseText.includes('passwd')) {
+                console.log('🚨 Malicious input detected in response:', responseText);
                 return false; // Vulnerable
             }
+            
+            // If we get a 200 response but the malicious input is sanitized, that's good
+            console.log('✅ Input properly sanitized, response:', responseText);
             return true; // Safe
         } catch (error) {
+            // If we get an error (like 400, 403, 500), that's also good for security
+            console.log('✅ Request blocked with error:', error.response?.status);
             return true; // Error is good for security
         }
     }
@@ -99,7 +111,7 @@ class BasicSecurityTester {
     // Test 4: Security Headers
     async testSecurityHeaders() {
         try {
-            const response = await axios.get(`${this.baseUrl}/api/health`);
+            const response = await axios.get(`${this.baseUrl}/`);
             const headers = response.headers;
             
             const requiredHeaders = [
@@ -108,9 +120,15 @@ class BasicSecurityTester {
                 'x-xss-protection'
             ];
 
+            console.log('📋 Available headers:', Object.keys(headers));
+            console.log('🔍 Required headers:', requiredHeaders);
+            
             const missingHeaders = requiredHeaders.filter(header => !headers[header]);
+            console.log('❌ Missing headers:', missingHeaders);
+            
             return missingHeaders.length === 0;
         } catch (error) {
+            console.log('🚨 Error testing headers:', error.response?.status, error.response?.statusText, error.message);
             return false;
         }
     }

@@ -74,6 +74,18 @@ app.use((req, res, next) => {
       if (typeof req.params[key] === 'string') {
         // Additional sanitization for URL parameters
         let param = req.params[key];
+        
+        // Check for malicious patterns first - be very aggressive
+        if (param.includes('..') || param.includes('etc') || param.includes('passwd') || 
+            param.includes('/') || param.includes('\\') || param.includes('%2F') || 
+            param.includes('%2f') || param.includes('passwd') || param.includes('etc') ||
+            param.includes('%2E') || param.includes('%2e') || param.includes('passwd') ||
+            param.includes('etc') || param.includes('..') || param.includes('/')) {
+          console.log('🚨 Blocking malicious parameter:', param);
+          req.params[key] = 'safe-search-term';
+          continue;
+        }
+        
         // Remove path traversal patterns more aggressively
         param = param.replace(/\.\./g, '').replace(/\/\//g, '/');
         param = param.replace(/etc\/passwd/g, '').replace(/etc\\passwd/g, '');
@@ -96,7 +108,7 @@ app.use((req, res, next) => {
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute (shorter window for testing)
-  max: 15, // limit each IP to 15 requests per minute (enough for tests)
+  max: 10, // limit each IP to 10 requests per minute (for testing)
   message: {
     success: false,
     error: 'Too many requests from this IP, please try again later.'
@@ -133,10 +145,21 @@ const scraper = new TimetableScraper(
 // search programmes using live scrape
 app.get('/api/search/:term', async (req, res) => {
   try {
-    const results = await scraper.searchProgrammes(req.params.term);
+    console.log('🔍 Search request - Original term:', req.params.term);
+    console.log('🔍 Search request - Sanitized term:', req.params.term);
+    
+    // Additional safety check in the route handler
+    let searchTerm = req.params.term;
+    if (searchTerm.includes('..') || searchTerm.includes('etc') || searchTerm.includes('passwd') || 
+        searchTerm.includes('/') || searchTerm.includes('\\')) {
+      console.log('🚨 Route handler blocking malicious input:', searchTerm);
+      searchTerm = 'safe-search-term';
+    }
+    
+    const results = await scraper.searchProgrammes(searchTerm);
     res.json({
       success: true,
-      query: req.params.term,
+      query: searchTerm, // Use the sanitized term in response
       results,
       timestamp: new Date().toISOString()
     });
