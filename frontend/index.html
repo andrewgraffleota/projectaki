@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ĀKI — Your Friendly Virtual Assistant</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #0b1020;
+            color: #e6e9f0;
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #121933;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #273765;
+        }
+        
+        .timetable-info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #b7f5c9;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #4caf50;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
+        .demo-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .demo-btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .demo-btn:hover {
+            background: #1976d2;
+        }
+
+        .settings-panel {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            background: #0f1530;
+            color: #e6e9f0;
+            border: 1px solid #212a55;
+        }
+        .settings-panel input[type="text"], .settings-panel textarea, .settings-panel select {
+            width: 100%;
+            box-sizing: border-box;
+            margin: 6px 0 12px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #2a3e8f;
+            background: #141c3f;
+            color: #e6e9f0;
+        }
+        .settings-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .brand-note { color:#9fb0e3; font-size: 13px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="header">
+            <h1>ĀKI — Your Friendly Virtual Assistant</h1>
+            <p>Night mode chat assistant. Connected to local Gemma3.</p>
+        </div>
+        
+        <div class="status">
+            <span class="status-dot"></span>
+            <span>ĀKI is online</span>
+        </div>
+        
+        <div class="timetable-info" style="background:#182246; color:#e6e9f0;">
+            <h3>✨ Getting Started</h3>
+            <p>Open ĀKI, set the system prompt, and add any course or timetable info for instant help.</p>
+            
+            <div class="demo-buttons">
+                <button class="demo-btn" onclick="openChatbot()">💬 Open ĀKI</button>
+            </div>
+            <div class="settings-panel">
+                <h3>Assistant Settings</h3>
+                <div class="settings-row">
+                    <label><input type="checkbox" id="useLLMMain" checked> Enable AI answers (Ollama)</label>
+                    <select id="modelMain">
+                        <option value="gemma3:1b" selected>Gemma3 1B (local)</option>
+                        <option value="llama3.2:latest">Illama 3.2 (local)</option>
+                        <option value="gemma3:4b">Gemma 3 4B (local)</option>
+                        <option value="phi3:3.8b">Phi3 3.8B (local)</option>
+                    </select>
+                    <label>Theme
+                        <select id="themeMode">
+                            <option value="night" selected>Night</option>
+                            <option value="day">Day</option>
+                        </select>
+                    </label>
+                </div>
+                <label>System prompt</label>
+                <textarea id="systemMain" rows="3" placeholder="System instructions for the assistant..."></textarea>
+                <label>Knowledge (timetable / course info)</label>
+                <textarea id="knowledgeMain" rows="5" placeholder="Paste course outlines, programme codes, groups, rooms, week ranges, campus info..."></textarea>
+                <div class="settings-row">
+                    <label class="demo-btn" style="background:#273765;">Upload .txt
+                        <input type="file" id="knowledgeFileMain" accept=".txt" style="display:none">
+                    </label>
+                    <button class="demo-btn" id="clearKnowledgeMain" type="button" style="background:#394b88;">Clear knowledge</button>
+                    <button class="demo-btn" id="resetSystemMain" type="button" style="background:#394b88;">Reset system prompt</button>
+                    <button class="demo-btn" id="saveSettingsBtn" type="button" style="background:#1e88e5;">Save</button>
+                    <span id="saveStatus" class="brand-note" style="display:none;">Saved ✓</span>
+                    <span class="brand-note">Branding: Whitireia & WelTec (for reference only).</span>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <!-- Your existing timetable content would go here -->
+        <div style="text-align: center; padding: 40px; color: #9fb0e3;">
+            <p>ĀKI overlays on top of your site to assist users.</p>
+        </div>
+    </div>
+
+    <!-- Load the chatbot -->
+    <script src="chatbot.js"></script>
+    <script>
+        // Settings persistence shared with chatbot widget
+        const DEFAULT_PROMPT = 'You are a helpful assistant for Whitireia and WelTec timetables and IT enquiries. Answer concisely and accurately.';
+
+        function loadSettings() {
+            try {
+                return {
+                    useLLM: JSON.parse(localStorage.getItem('chatbot.useLLM') ?? 'true'),
+                    model: localStorage.getItem('chatbot.selectedModel') || 'gemma3:1b',
+                    system: localStorage.getItem('chatbot.systemPrompt') || DEFAULT_PROMPT,
+                    knowledge: localStorage.getItem('chatbot.timetableContext') || '',
+                    theme: localStorage.getItem('aki.theme') || 'night'
+                };
+            } catch { return { useLLM: true, model: 'gemma3:1b', system: DEFAULT_PROMPT, knowledge: '', theme: 'night' }; }
+        }
+
+        function saveSettings({useLLM, model, system, knowledge, theme}) {
+            try {
+                if (useLLM !== undefined) localStorage.setItem('chatbot.useLLM', JSON.stringify(useLLM));
+                if (model) localStorage.setItem('chatbot.selectedModel', model);
+                if (system !== undefined) localStorage.setItem('chatbot.systemPrompt', system);
+                if (knowledge !== undefined) localStorage.setItem('chatbot.timetableContext', knowledge);
+                if (theme) localStorage.setItem('aki.theme', theme);
+            } catch {}
+        }
+
+        function applyTheme(mode) {
+            const body = document.body;
+            if (mode === 'day') {
+                body.style.background = '#f5f7fb';
+                body.style.color = '#0b1020';
+                } else {
+                body.style.background = '#0b1020';
+                body.style.color = '#e6e9f0';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const s = loadSettings();
+            const useLLMMain = document.getElementById('useLLMMain');
+            const modelMain = document.getElementById('modelMain');
+            const systemMain = document.getElementById('systemMain');
+            const knowledgeMain = document.getElementById('knowledgeMain');
+            const knowledgeFileMain = document.getElementById('knowledgeFileMain');
+            const clearKnowledgeMain = document.getElementById('clearKnowledgeMain');
+            const resetSystemMain = document.getElementById('resetSystemMain');
+            const themeMode = document.getElementById('themeMode');
+            const saveBtn = document.getElementById('saveSettingsBtn');
+            const saveStatus = document.getElementById('saveStatus');
+
+            useLLMMain.checked = s.useLLM;
+            modelMain.value = s.model;
+            systemMain.value = s.system;
+            knowledgeMain.value = s.knowledge;
+            themeMode.value = s.theme;
+            applyTheme(s.theme);
+
+            useLLMMain.addEventListener('change', e => saveSettings({ useLLM: e.target.checked }));
+            modelMain.addEventListener('change', e => { 
+                saveSettings({ model: e.target.value });
+                // Update chatbot model status if chatbot is available
+                if (window.chatbot) {
+                    window.chatbot.selectedModel = e.target.value;
+                    window.chatbot.updateModelStatus();
+                }
+            });
+            systemMain.addEventListener('input', e => saveSettings({ system: e.target.value }));
+            knowledgeMain.addEventListener('input', e => saveSettings({ knowledge: e.target.value }));
+            themeMode.addEventListener('change', e => { saveSettings({ theme: e.target.value }); applyTheme(e.target.value); });
+
+            knowledgeFileMain.addEventListener('change', async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                    const text = await file.text();
+                    const trimmed = text.trim();
+                    if (trimmed) {
+                        const updated = (knowledgeMain.value ? knowledgeMain.value + '\n\n' : '') + trimmed;
+                        knowledgeMain.value = updated;
+                        saveSettings({ knowledge: updated });
+                    }
+                } finally { e.target.value = ''; }
+            });
+
+            clearKnowledgeMain.addEventListener('click', () => { knowledgeMain.value = ''; saveSettings({ knowledge: '' }); });
+            resetSystemMain.addEventListener('click', () => { systemMain.value = DEFAULT_PROMPT; saveSettings({ system: DEFAULT_PROMPT }); });
+
+            function showSaved() {
+                saveStatus.style.display = 'inline';
+                setTimeout(() => { saveStatus.style.display = 'none'; }, 1500);
+            }
+            saveBtn.addEventListener('click', () => {
+                saveSettings({
+                    useLLM: useLLMMain.checked,
+                    model: modelMain.value,
+                    system: systemMain.value,
+                    knowledge: knowledgeMain.value,
+                    theme: themeMode.value
+                });
+                applyTheme(themeMode.value);
+                showSaved();
+            });
+        });
+    </script>
+    <script>
+        function openChatbot() {
+            if (window.chatbot) {
+                window.chatbot.toggleChatbot();
+            }
+        }
+    </script>
+</body>
+</html>

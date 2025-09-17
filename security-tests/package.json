@@ -1,0 +1,17 @@
+{
+  "name": "security-tests",
+  "version": "1.0.0",
+  "description": "Security testing suite for timetable chatbot",
+  "main": "security-tests.js",
+  "scripts": {
+    "test": "node security-tests.js",
+    "test:basic": "node basic-security-test.js",
+    "test:advanced": "node advanced-security-test.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}
+
+
