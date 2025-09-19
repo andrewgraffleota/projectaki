@@ -1,4 +1,22 @@
-// example.test.js
-test('basic addition works', () => {
-    expect(1 + 2).toBe(3);
+/**
+ * @jest-environment jsdom
+ */
+
+const { LiveTimetableChatbot } = require("./chatbot.js")
+
+
+test("Testing to see if Chatbox to not be open at first", () => {
+    const LTCObject = new LiveTimetableChatbot();
+    expect(LTCObject.isOpen).toBe(false);
+});
+
+
+test("Testing if the loading the chatbot works", () => {
+    const LTCObject = new LiveTimetableChatbot();
+    expect(LTCObject.isLoading).toBe(false);
+});
+
+test("Testing if the chatbot LLM is being used", () => {
+    const LTCObject = new LiveTimetableChatbot();
+    expect(LTCObject.useLLM).toBe(true);
 });
