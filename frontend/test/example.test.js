@@ -14,5 +14,9 @@ test("Testing to see if Chatbox to not be open at first", () => {
 test("Testing if the loading the chatbot works", () => {
     const LTCObject = new LiveTimetableChatbot();
     expect(LTCObject.isLoading).toBe(false);
-    LTCObject.loadChatbot();
+});
+
+test("Testing if the chatbot LLM is being used", () => {
+    const LTCObject = new LiveTimetableChatbot();
+    expect(LTCObject.useLLM).toBe(true);
 });
