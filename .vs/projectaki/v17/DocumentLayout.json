@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\64204\\source\\repos\\projectaki\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\example.test.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\test\\example.test.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\UnitTests.test.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\test\\UnitTests.test.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\chatbot.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
@@ -18,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -38,28 +38,34 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "UnitTests.test.js",
+              "DocumentMoniker": "C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\UnitTests.test.js",
+              "RelativeDocumentMoniker": "frontend\\test\\UnitTests.test.js",
+              "ToolTip": "C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\UnitTests.test.js",
+              "RelativeToolTip": "frontend\\test\\UnitTests.test.js",
+              "ViewState": "AgIAACYAAAAAAAAAAAAkwDkAAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-09-19T02:18:07.789Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
               "Title": "chatbot.js",
               "DocumentMoniker": "C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\chatbot.js",
               "RelativeDocumentMoniker": "frontend\\test\\chatbot.js",
               "ToolTip": "C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\chatbot.js",
               "RelativeToolTip": "frontend\\test\\chatbot.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAALcBAAARAAAAAAAAAA==",
+              "ViewState": "AgIAAPMBAAAAAAAAAAAAAPgBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-09-18T07:33:09.195Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "example.test.js",
-              "DocumentMoniker": "C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\example.test.js",
-              "RelativeDocumentMoniker": "frontend\\test\\example.test.js",
-              "ToolTip": "C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\example.test.js",
-              "RelativeToolTip": "frontend\\test\\example.test.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAmAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-09-18T07:33:07.08Z",
+              "WhenOpened": "2025-09-19T03:15:43.687Z",
               "EditorCaption": ""
             }
           ]
