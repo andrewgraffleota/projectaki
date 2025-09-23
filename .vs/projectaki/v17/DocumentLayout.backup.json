@@ -44,17 +44,11 @@
               "RelativeDocumentMoniker": "frontend\\test\\UnitTests.test.js",
               "ToolTip": "C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\UnitTests.test.js",
               "RelativeToolTip": "frontend\\test\\UnitTests.test.js",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAADkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAACcAAAAAAAAAAAAAADQAAAA/AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2025-09-19T02:18:07.789Z",
               "EditorCaption": ""
-            }
-          ]
-        },
-        {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 0,
-          "Children": [
+            },
             {
               "$type": "Document",
               "DocumentIndex": 1,
@@ -63,7 +57,7 @@
               "RelativeDocumentMoniker": "frontend\\test\\chatbot.js",
               "ToolTip": "C:\\Users\\64204\\source\\repos\\projectaki\\frontend\\test\\chatbot.js",
               "RelativeToolTip": "frontend\\test\\chatbot.js",
-              "ViewState": "AgIAAPMBAAAAAAAAAAAAAFgCAAAVAAAAAAAAAA==",
+              "ViewState": "AgIAAH8CAAAAAAAAAAAAAPgBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2025-09-19T03:15:43.687Z",
               "EditorCaption": ""
