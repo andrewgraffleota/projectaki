@@ -8,6 +8,12 @@ class LiveTimetableChatbot {
         this.systemPrompt = 'You are a helpful assistant for Whitireia and WelTec timetables and IT enquiries. Answer concisely and accurately.';
         this.timetableContext = 'Students should use the Programmes tab, select Student Group(s), and Weeks, then View Timetable. Campuses: PC (Petone Construction J-Block), PE (Petone), PW (Porirua), TA (Te Auaha).';
         this.selectedModel = 'deepseek-r1:8b';
+        this.connectionStatus = {
+            connected: false,
+            lastChecked: null,
+            error: null
+        };
+        this.connectionCheckInterval = null;
         
         this.createChatbotHTML();
         this.initializeEventListeners();
@@ -29,7 +35,7 @@ class LiveTimetableChatbot {
                         <div class="avatar">🏫</div>
                         <div>
                             <h3>ĀKI — Virtual Assistant</h3>
-                            <p><span class="status-indicator"></span>Connected to <span id="modelStatus">DeepSeek (local)</span></p>
+                            <p><span class="status-indicator" id="connectionStatusDot"></span><span id="connectionStatusText">Checking connection...</span></p>
                             <p style="margin:4px 0 0; font-size:11px; opacity:0.85;">Whitireia & WelTec</p>
                         </div>
                     </div>
@@ -158,10 +164,33 @@ class LiveTimetableChatbot {
                 display: inline-block;
                 width: 8px;
                 height: 8px;
-                background: #4caf50;
+                background: #ff9800;
                 border-radius: 50%;
                 margin-right: 5px;
                 animation: blink 2s infinite;
+            }
+
+            .status-indicator.connected {
+                background: #4caf50;
+                animation: none;
+                opacity: 1;
+            }
+
+            .status-indicator.disconnected {
+                background: #f44336;
+                animation: none;
+                opacity: 1;
+            }
+
+            .status-indicator.checking {
+                background: #ff9800;
+                animation: pulse 1s infinite;
+            }
+
+            @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.5; }
+                100% { opacity: 1; }
             }
 
             .close-btn {
@@ -429,8 +458,13 @@ class LiveTimetableChatbot {
         // initialize settings by loading from local storage
         this.loadSettings();
         
-        // update model status display
-        this.updateModelStatus();
+        // load available models and update status
+        this.loadAvailableModels().then(() => {
+            this.updateModelStatus();
+        });
+
+        // Start connection monitoring
+        this.startConnectionMonitoring();
 
         // Show notification after delay
         setTimeout(() => {
@@ -464,21 +498,147 @@ class LiveTimetableChatbot {
             if (systemPrompt) this.systemPrompt = systemPrompt;
             if (timetableContext) this.timetableContext = timetableContext;
             if (selectedModel) this.selectedModel = selectedModel;
+            
+            // Update model status display immediately if we have connection status
+            if (this.connectionStatus && this.connectionStatus.connected) {
+                this.updateModelStatusImmediate();
+            }
         } catch (_) { /* ignore */ }
     }
 
     updateModelStatus() {
         const modelStatus = document.getElementById('modelStatus');
         if (modelStatus) {
-            let displayName = 'DeepSeek (local)';
-            if (this.selectedModel === 'llama3.2:latest') {
-                displayName = 'Illama 3.2 (local)';
-            } else if (this.selectedModel === 'gemma3:4b') {
-                displayName = 'Gemma 3 4B (local)';
-            } else if (this.selectedModel === 'phi3:3.8b') {
-                displayName = 'Phi3 3.8B (local)';
+            if (this.selectedModel && this.selectedModel !== '') {
+                // Extract model name without version for display
+                const displayName = this.selectedModel.split(':')[0] + ' (local)';
+                modelStatus.textContent = displayName;
+            } else {
+                modelStatus.textContent = 'No model selected';
             }
-            modelStatus.textContent = displayName;
+        }
+    }
+
+    async checkConnectionStatus() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/connection-status`);
+            
+            // Check if response is OK and is JSON
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response. Is the backend running?');
+            }
+            
+            const data = await response.json();
+            
+            this.connectionStatus = {
+                connected: data.connected,
+                lastChecked: new Date(),
+                error: data.error || null,
+                availableModels: data.availableModels || 0,
+                defaultModelAvailable: data.defaultModelAvailable || false
+            };
+            
+            this.updateConnectionStatusDisplay();
+            return data.connected;
+        } catch (error) {
+            console.error('Connection check failed:', error);
+            this.connectionStatus = {
+                connected: false,
+                lastChecked: new Date(),
+                error: error.message,
+                availableModels: 0,
+                defaultModelAvailable: false
+            };
+            this.updateConnectionStatusDisplay();
+            return false;
+        }
+    }
+
+    updateConnectionStatusDisplay() {
+        const statusDot = document.getElementById('connectionStatusDot');
+        const statusText = document.getElementById('connectionStatusText');
+        
+        if (!statusDot || !statusText) return;
+
+        // Remove all status classes
+        statusDot.classList.remove('connected', 'disconnected', 'checking');
+        
+        if (this.connectionStatus.connected) {
+            statusDot.classList.add('connected');
+            const modelName = this.selectedModel ? this.selectedModel.split(':')[0] : 'model';
+            statusText.textContent = `Connected to ${modelName} (${this.connectionStatus.availableModels} models)`;
+        } else {
+            statusDot.classList.add('disconnected');
+            if (this.connectionStatus.error) {
+                statusText.textContent = `Disconnected - ${this.connectionStatus.error}`;
+            } else {
+                statusText.textContent = 'Disconnected - Check Ollama connection';
+            }
+        }
+    }
+
+    // Method to immediately update model status when model selection changes
+    updateModelStatusImmediate() {
+        const statusDot = document.getElementById('connectionStatusDot');
+        const statusText = document.getElementById('connectionStatusText');
+        
+        if (!statusDot || !statusText) return;
+
+        // If connected, update the model name immediately
+        if (this.connectionStatus.connected) {
+            const modelName = this.selectedModel ? this.selectedModel.split(':')[0] : 'model';
+            statusText.textContent = `Connected to ${modelName} (${this.connectionStatus.availableModels} models)`;
+        }
+    }
+
+    startConnectionMonitoring() {
+        // Initial check with a small delay to allow server to start
+        setTimeout(() => {
+            this.checkConnectionStatus();
+        }, 1000);
+        
+        // Set up periodic checks every 30 seconds
+        this.connectionCheckInterval = setInterval(() => {
+            this.checkConnectionStatus();
+        }, 30000);
+    }
+
+    stopConnectionMonitoring() {
+        if (this.connectionCheckInterval) {
+            clearInterval(this.connectionCheckInterval);
+            this.connectionCheckInterval = null;
+        }
+    }
+
+    async loadAvailableModels() {
+        try {
+            const response = await fetch('/api/models');
+            const data = await response.json();
+            
+            if (data.success && data.models.length > 0) {
+                // Update the model status with the first available model if none selected
+                if (!this.selectedModel || this.selectedModel === '') {
+                    this.selectedModel = data.models[0].name;
+                    this.persistSettings();
+                    this.updateModelStatus();
+                }
+                return data.models;
+            } else {
+                // No models available
+                this.selectedModel = '';
+                this.updateModelStatus();
+                return [];
+            }
+        } catch (error) {
+            console.error('Failed to load models:', error);
+            this.selectedModel = '';
+            this.updateModelStatus();
+            return [];
         }
     }
 
@@ -605,12 +765,18 @@ class LiveTimetableChatbot {
             // No suggestions; forward directly to the model if enabled
             // If LLM is enabled, forward the message to the model
             if (this.useLLM) {
-                const thinkingId = this.addThinking();
-                try {
-                    const reply = await this.callLLM(message);
-                    this.replaceThinking(thinkingId, reply || '');
-                } catch (err) {
-                    this.replaceThinking(thinkingId, 'Sorry, I could not get an AI response right now.');
+                if (!this.selectedModel || this.selectedModel === '') {
+                    this.addMessage('No AI model is available. Please install a model in Ollama or check your connection.', false);
+                } else if (!this.connectionStatus.connected) {
+                    this.addMessage('AI model is not connected. Please check your Ollama connection and try again.', false);
+                } else {
+                    const thinkingId = this.addThinking();
+                    try {
+                        const reply = await this.callLLM(message);
+                        this.replaceThinking(thinkingId, reply || '');
+                    } catch (err) {
+                        this.replaceThinking(thinkingId, 'Sorry, I could not get an AI response right now.');
+                    }
                 }
             }
         }
@@ -671,10 +837,16 @@ class LiveTimetableChatbot {
         // Minimal quick handler: just echo to LLM path
         this.addMessage(message, true);
         if (this.useLLM) {
-            const id = this.addThinking();
-            this.callLLM(message)
-                .then(reply => this.replaceThinking(id, reply || ''))
-                .catch(() => this.replaceThinking(id, 'Sorry, I could not get an AI response right now.'));
+            if (!this.selectedModel || this.selectedModel === '') {
+                this.addMessage('No AI model is available. Please install a model in Ollama or check your connection.', false);
+            } else if (!this.connectionStatus.connected) {
+                this.addMessage('AI model is not connected. Please check your Ollama connection and try again.', false);
+            } else {
+                const id = this.addThinking();
+                this.callLLM(message)
+                    .then(reply => this.replaceThinking(id, reply || ''))
+                    .catch(() => this.replaceThinking(id, 'Sorry, I could not get an AI response right now.'));
+            }
         }
     }
 }

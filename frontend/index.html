@@ -48,14 +48,32 @@
         .status-dot {
             width: 10px;
             height: 10px;
-            background: #4caf50;
+            background: #ff9800;
             border-radius: 50%;
-            animation: blink 2s infinite;
+            animation: pulse 1s infinite;
+        }
+
+        .status-dot.connected {
+            background: #4caf50;
+            animation: none;
+            opacity: 1;
+        }
+
+        .status-dot.disconnected {
+            background: #f44336;
+            animation: none;
+            opacity: 1;
+        }
+
+        .status-dot.checking {
+            background: #ff9800;
+            animation: pulse 1s infinite;
         }
         
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.3; }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
         
         .demo-buttons {
@@ -109,8 +127,8 @@
         </div>
         
         <div class="status">
-            <span class="status-dot"></span>
-            <span>ĀKI is online</span>
+            <span class="status-dot" id="mainStatusDot"></span>
+            <span id="mainStatusText">Checking connection...</span>
         </div>
         
         <div class="timetable-info" style="background:#182246; color:#e6e9f0;">
@@ -125,10 +143,7 @@
                 <div class="settings-row">
                     <label><input type="checkbox" id="useLLMMain" checked> Enable AI answers (Ollama)</label>
                     <select id="modelMain">
-                        <option value="deepseek-r1:8b" selected>DeepSeek R1 8B (local)</option>
-                        <option value="llama3.2:latest">Illama 3.2 (local)</option>
-                        <option value="gemma3:4b">Gemma 3 4B (local)</option>
-                        <option value="phi3:3.8b">Phi3 3.8B (local)</option>
+                        <option value="" disabled>Loading models...</option>
                     </select>
                     <label>Theme
                         <select id="themeMode">
@@ -201,7 +216,115 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        // Function to load available models
+        async function loadAvailableModels() {
+            const modelSelect = document.getElementById('modelMain');
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                
+                // Clear existing options
+                modelSelect.innerHTML = '';
+                
+                if (data.success && data.models.length > 0) {
+                    // Add models to dropdown
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.name;
+                        option.textContent = `${model.name} (${formatModelSize(model.size)})`;
+                        modelSelect.appendChild(option);
+                    });
+                    
+                    // Set default selection if no saved model or saved model not found
+                    const savedModel = localStorage.getItem('chatbot.selectedModel') || 'deepseek-r1:8b';
+                    const savedOption = Array.from(modelSelect.options).find(opt => opt.value === savedModel);
+                    if (savedOption) {
+                        modelSelect.value = savedModel;
+                    } else {
+                        modelSelect.value = data.models[0].name;
+                    }
+                } else {
+                    // No models found
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No models found';
+                    option.disabled = true;
+                    modelSelect.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Failed to load models:', error);
+                modelSelect.innerHTML = '<option value="" disabled>Error loading models</option>';
+            }
+        }
+
+        // Helper function to format model size
+        function formatModelSize(bytes) {
+            if (!bytes) return 'Unknown size';
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Connection monitoring for main page
+        async function checkMainConnectionStatus() {
+            const statusDot = document.getElementById('mainStatusDot');
+            const statusText = document.getElementById('mainStatusText');
+            
+            if (!statusDot || !statusText) return;
+
+            try {
+                const response = await fetch('/api/connection-status');
+                
+                // Check if response is OK and is JSON
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned non-JSON response. Is the backend running?');
+                }
+                
+                const data = await response.json();
+                
+                // Remove all status classes
+                statusDot.classList.remove('connected', 'disconnected', 'checking');
+                
+                if (data.connected) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'ĀKI is online';
+                } else {
+                    statusDot.classList.add('disconnected');
+                    statusText.textContent = 'ĀKI is offline - Check Ollama connection';
+                }
+            } catch (error) {
+                console.error('Connection check failed:', error);
+                statusDot.classList.remove('connected', 'checking');
+                statusDot.classList.add('disconnected');
+                
+                // Provide more specific error messages
+                if (error.message.includes('non-JSON response')) {
+                    statusText.textContent = 'ĀKI is offline - Backend server not running';
+                } else if (error.message.includes('Failed to fetch')) {
+                    statusText.textContent = 'ĀKI is offline - Cannot reach server';
+                } else {
+                    statusText.textContent = 'ĀKI is offline - Connection error';
+                }
+            }
+        }
+
+        // Start periodic connection monitoring for main page
+        function startMainConnectionMonitoring() {
+            // Initial check with a small delay to allow server to start
+            setTimeout(() => {
+                checkMainConnectionStatus();
+            }, 1000);
+            
+            // Check every 30 seconds
+            setInterval(checkMainConnectionStatus, 30000);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
             const s = loadSettings();
             const useLLMMain = document.getElementById('useLLMMain');
             const modelMain = document.getElementById('modelMain');
@@ -214,8 +337,13 @@
             const saveBtn = document.getElementById('saveSettingsBtn');
             const saveStatus = document.getElementById('saveStatus');
 
+            // Start connection monitoring
+            startMainConnectionMonitoring();
+
+            // Load available models first
+            await loadAvailableModels();
+
             useLLMMain.checked = s.useLLM;
-            modelMain.value = s.model;
             systemMain.value = s.system;
             knowledgeMain.value = s.knowledge;
             themeMode.value = s.theme;
@@ -223,11 +351,13 @@
 
             useLLMMain.addEventListener('change', e => saveSettings({ useLLM: e.target.checked }));
             modelMain.addEventListener('change', e => { 
-                saveSettings({ model: e.target.value });
+                saveSettings({ model: e.target.value }); 
                 // Update chatbot model status if chatbot is available
                 if (window.chatbot) {
                     window.chatbot.selectedModel = e.target.value;
                     window.chatbot.updateModelStatus();
+                    // Immediately update the connection status display with new model name
+                    window.chatbot.updateModelStatusImmediate();
                 }
             });
             systemMain.addEventListener('input', e => saveSettings({ system: e.target.value }));

@@ -62,6 +62,72 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// connection status check for Ollama
+app.get('/api/connection-status', async (req, res) => {
+  try {
+    // Check if Ollama is accessible
+    const response = await axios.get(`${OLLAMA_HOST}/api/tags`, { timeout: 5000 });
+    const models = response.data.models || [];
+    
+    // Check if the default model is available
+    const defaultModelAvailable = models.some(model => model.name === OLLAMA_MODEL);
+    
+    res.json({
+      connected: true,
+      ollamaHost: OLLAMA_HOST,
+      defaultModel: OLLAMA_MODEL,
+      defaultModelAvailable,
+      availableModels: models.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Connection status check failed:', err.message);
+    res.json({
+      connected: false,
+      ollamaHost: OLLAMA_HOST,
+      defaultModel: OLLAMA_MODEL,
+      defaultModelAvailable: false,
+      availableModels: 0,
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// get available models from Ollama
+app.get('/api/models', async (req, res) => {
+  try {
+    const response = await axios.get(`${OLLAMA_HOST}/api/tags`, { timeout: 10000 });
+    const models = response.data.models || [];
+    
+    // Format models for frontend
+    const formattedModels = models.map(model => ({
+      name: model.name,
+      size: model.size,
+      modified_at: model.modified_at,
+      family: model.details?.family || 'unknown',
+      parameter_size: model.details?.parameter_size || 'unknown',
+      format: model.details?.format || 'unknown'
+    }));
+
+    res.json({
+      success: true,
+      models: formattedModels,
+      count: formattedModels.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Model detection error:', err.message);
+    res.json({
+      success: false,
+      models: [],
+      count: 0,
+      error: 'Failed to detect models. Make sure Ollama is running.',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // chat via local Ollama DeepSeek model
 app.post('/api/llm/chat', async (req, res) => {
   try {
