@@ -62,6 +62,38 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// connection status check for Ollama
+app.get('/api/connection-status', async (req, res) => {
+  try {
+    // Check if Ollama is accessible
+    const response = await axios.get(`${OLLAMA_HOST}/api/tags`, { timeout: 5000 });
+    const models = response.data.models || [];
+    
+    // Check if the default model is available
+    const defaultModelAvailable = models.some(model => model.name === OLLAMA_MODEL);
+    
+    res.json({
+      connected: true,
+      ollamaHost: OLLAMA_HOST,
+      defaultModel: OLLAMA_MODEL,
+      defaultModelAvailable,
+      availableModels: models.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Connection status check failed:', err.message);
+    res.json({
+      connected: false,
+      ollamaHost: OLLAMA_HOST,
+      defaultModel: OLLAMA_MODEL,
+      defaultModelAvailable: false,
+      availableModels: 0,
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // get available models from Ollama
 app.get('/api/models', async (req, res) => {
   try {
