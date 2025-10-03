@@ -62,6 +62,40 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// get available models from Ollama
+app.get('/api/models', async (req, res) => {
+  try {
+    const response = await axios.get(`${OLLAMA_HOST}/api/tags`, { timeout: 10000 });
+    const models = response.data.models || [];
+    
+    // Format models for frontend
+    const formattedModels = models.map(model => ({
+      name: model.name,
+      size: model.size,
+      modified_at: model.modified_at,
+      family: model.details?.family || 'unknown',
+      parameter_size: model.details?.parameter_size || 'unknown',
+      format: model.details?.format || 'unknown'
+    }));
+
+    res.json({
+      success: true,
+      models: formattedModels,
+      count: formattedModels.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Model detection error:', err.message);
+    res.json({
+      success: false,
+      models: [],
+      count: 0,
+      error: 'Failed to detect models. Make sure Ollama is running.',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // chat via local Ollama DeepSeek model
 app.post('/api/llm/chat', async (req, res) => {
   try {

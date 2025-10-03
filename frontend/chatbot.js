@@ -429,8 +429,10 @@ class LiveTimetableChatbot {
         // initialize settings by loading from local storage
         this.loadSettings();
         
-        // update model status display
-        this.updateModelStatus();
+        // load available models and update status
+        this.loadAvailableModels().then(() => {
+            this.updateModelStatus();
+        });
 
         // Show notification after delay
         setTimeout(() => {
@@ -470,15 +472,40 @@ class LiveTimetableChatbot {
     updateModelStatus() {
         const modelStatus = document.getElementById('modelStatus');
         if (modelStatus) {
-            let displayName = 'DeepSeek (local)';
-            if (this.selectedModel === 'llama3.2:latest') {
-                displayName = 'Illama 3.2 (local)';
-            } else if (this.selectedModel === 'gemma3:4b') {
-                displayName = 'Gemma 3 4B (local)';
-            } else if (this.selectedModel === 'phi3:3.8b') {
-                displayName = 'Phi3 3.8B (local)';
+            if (this.selectedModel && this.selectedModel !== '') {
+                // Extract model name without version for display
+                const displayName = this.selectedModel.split(':')[0] + ' (local)';
+                modelStatus.textContent = displayName;
+            } else {
+                modelStatus.textContent = 'No model selected';
             }
-            modelStatus.textContent = displayName;
+        }
+    }
+
+    async loadAvailableModels() {
+        try {
+            const response = await fetch('/api/models');
+            const data = await response.json();
+            
+            if (data.success && data.models.length > 0) {
+                // Update the model status with the first available model if none selected
+                if (!this.selectedModel || this.selectedModel === '') {
+                    this.selectedModel = data.models[0].name;
+                    this.persistSettings();
+                    this.updateModelStatus();
+                }
+                return data.models;
+            } else {
+                // No models available
+                this.selectedModel = '';
+                this.updateModelStatus();
+                return [];
+            }
+        } catch (error) {
+            console.error('Failed to load models:', error);
+            this.selectedModel = '';
+            this.updateModelStatus();
+            return [];
         }
     }
 
@@ -605,12 +632,16 @@ class LiveTimetableChatbot {
             // No suggestions; forward directly to the model if enabled
             // If LLM is enabled, forward the message to the model
             if (this.useLLM) {
-                const thinkingId = this.addThinking();
-                try {
-                    const reply = await this.callLLM(message);
-                    this.replaceThinking(thinkingId, reply || '');
-                } catch (err) {
-                    this.replaceThinking(thinkingId, 'Sorry, I could not get an AI response right now.');
+                if (!this.selectedModel || this.selectedModel === '') {
+                    this.addMessage('No AI model is available. Please install a model in Ollama or check your connection.', false);
+                } else {
+                    const thinkingId = this.addThinking();
+                    try {
+                        const reply = await this.callLLM(message);
+                        this.replaceThinking(thinkingId, reply || '');
+                    } catch (err) {
+                        this.replaceThinking(thinkingId, 'Sorry, I could not get an AI response right now.');
+                    }
                 }
             }
         }
@@ -671,10 +702,14 @@ class LiveTimetableChatbot {
         // Minimal quick handler: just echo to LLM path
         this.addMessage(message, true);
         if (this.useLLM) {
-            const id = this.addThinking();
-            this.callLLM(message)
-                .then(reply => this.replaceThinking(id, reply || ''))
-                .catch(() => this.replaceThinking(id, 'Sorry, I could not get an AI response right now.'));
+            if (!this.selectedModel || this.selectedModel === '') {
+                this.addMessage('No AI model is available. Please install a model in Ollama or check your connection.', false);
+            } else {
+                const id = this.addThinking();
+                this.callLLM(message)
+                    .then(reply => this.replaceThinking(id, reply || ''))
+                    .catch(() => this.replaceThinking(id, 'Sorry, I could not get an AI response right now.'));
+            }
         }
     }
 }

@@ -125,10 +125,7 @@
                 <div class="settings-row">
                     <label><input type="checkbox" id="useLLMMain" checked> Enable AI answers (Ollama)</label>
                     <select id="modelMain">
-                        <option value="deepseek-r1:8b" selected>DeepSeek R1 8B (local)</option>
-                        <option value="llama3.2:latest">Illama 3.2 (local)</option>
-                        <option value="gemma3:4b">Gemma 3 4B (local)</option>
-                        <option value="phi3:3.8b">Phi3 3.8B (local)</option>
+                        <option value="" disabled>Loading models...</option>
                     </select>
                     <label>Theme
                         <select id="themeMode">
@@ -201,7 +198,56 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        // Function to load available models
+        async function loadAvailableModels() {
+            const modelSelect = document.getElementById('modelMain');
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                
+                // Clear existing options
+                modelSelect.innerHTML = '';
+                
+                if (data.success && data.models.length > 0) {
+                    // Add models to dropdown
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.name;
+                        option.textContent = `${model.name} (${formatModelSize(model.size)})`;
+                        modelSelect.appendChild(option);
+                    });
+                    
+                    // Set default selection if no saved model or saved model not found
+                    const savedModel = localStorage.getItem('chatbot.selectedModel') || 'deepseek-r1:8b';
+                    const savedOption = Array.from(modelSelect.options).find(opt => opt.value === savedModel);
+                    if (savedOption) {
+                        modelSelect.value = savedModel;
+                    } else {
+                        modelSelect.value = data.models[0].name;
+                    }
+                } else {
+                    // No models found
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No models found';
+                    option.disabled = true;
+                    modelSelect.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Failed to load models:', error);
+                modelSelect.innerHTML = '<option value="" disabled>Error loading models</option>';
+            }
+        }
+
+        // Helper function to format model size
+        function formatModelSize(bytes) {
+            if (!bytes) return 'Unknown size';
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
             const s = loadSettings();
             const useLLMMain = document.getElementById('useLLMMain');
             const modelMain = document.getElementById('modelMain');
@@ -214,8 +260,10 @@
             const saveBtn = document.getElementById('saveSettingsBtn');
             const saveStatus = document.getElementById('saveStatus');
 
+            // Load available models first
+            await loadAvailableModels();
+
             useLLMMain.checked = s.useLLM;
-            modelMain.value = s.model;
             systemMain.value = s.system;
             knowledgeMain.value = s.knowledge;
             themeMode.value = s.theme;
